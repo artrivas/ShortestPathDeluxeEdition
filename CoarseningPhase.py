@@ -4,37 +4,39 @@ import numpy as np
 
 def compress(graph):
     matched = dict()
-    newGraph = Graph(graph)
+    newGraph = Graph(graph,directed=False)
     for v in graph.vertices():
-        if v not in matched:
-            max_edge = None
-            max_weight = float('-inf')
-            for neigh in v.all_neighbors():
-                if neigh not in matched:
-                    weight =  float(graph.ep["weight"][graph.edge(v,neigh)]) #Heavy Edge Matching, Only 2*|E| iterations
-                    if weight > max_weight:
-                        max_edge = (v,neigh)
-                        max_weight = weight
-            if max_edge != None:
-                u,v = max_edge
-                matched[v] = True
-                matched[u] = True
-                #Merge node u and v
-                x = newGraph.add_vertex()
-                for vertice in max_edge:
-                    for edge in vertice.all_edges():
-                        source = edge.source()
-                        weight = graph.ep["weight"][edge]
-
-                        # Check if edge already exists
-                        existing_edge = newGraph.edge(source, x)
-                        if existing_edge:
-                            newGraph.ep["weight"][existing_edge] += weight
-                        else:
-                            new_edge = newGraph.add_edge(source, x)
-                            newGraph.ep["weight"][new_edge] = weight
-                newGraph.remove_vertex(newGraph.vertex(u), fast=True)
-                newGraph.remove_vertex(newGraph.vertex(v), fast=True)
+        if v in matched:
+            continue
+        max_edge = None
+        max_weight = float('-inf')
+        for e in v.all_edges():
+            neigh = e.target() if e.source() == v else e.source()
+            if neigh not in matched:
+                weight = graph.ep["weight"][e]
+                if weight > max_weight:
+                    max_edge = (v,neigh)
+                    max_weight = weight
+        if max_edge != None:
+            u,v = max_edge
+            matched[v] = True
+            matched[u] = True
+            #Merge node u and v
+            x = newGraph.add_vertex()
+            for vertice in [u,v]:
+                for edge in vertice.all_edges():
+                    weight = newGraph.ep["weight"][edge]
+                    other = edge.target() if edge.source() == vertice else edge.source()
+                    # Check if edge already exists
+                    existing_edge = newGraph.edge(other, x)
+                    if existing_edge:
+                        newGraph.ep["weight"][existing_edge] += weight
+                    else:
+                        new_edge = newGraph.add_edge(other, x)
+                        newGraph.ep["weight"][new_edge] = weight
+                    
+            newGraph.remove_vertex(newGraph.vertex(u), fast=True)
+            newGraph.remove_vertex(newGraph.vertex(v), fast=True)
     return newGraph
 
 # Testing
@@ -59,7 +61,7 @@ vertex_labels[v4] = "D"
 g.vp["name"] = vertex_labels
 
 edge_weights = g.new_edge_property("double")
-edge_weights[e1] = 1.5
+edge_weights[e1] = 1.9
 edge_weights[e2] = 2.0
 edge_weights[e3] = 2.5
 edge_weights[e4] = 1.0
