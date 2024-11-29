@@ -1,5 +1,8 @@
 from graph_tool.all import Graph, graph_draw
 import numpy as np
+import random
+from collections import deque
+import heapq
 
 
 def compress(graph):
