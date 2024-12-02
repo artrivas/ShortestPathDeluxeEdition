@@ -2,6 +2,11 @@ from graph_tool.all import Graph, graph_draw #Pesado cargar esta libreria :c
 import random
 import heapq
 
+"""
+Jobs:
+    Combine partition and coarsening phase to label correctly the partition of finer graphs
+"""
+
 class Frontier:
     def __init__(self):
         self.heap = []
@@ -46,9 +51,8 @@ def bfs(graph, start,mode):
     if mode: #partition the graph by the start node
         graph1 = Graph(graph,directed=False)
         graph2 = Graph(graph,directed=False)
-    partition = dict() #[vertex, partition] -> 0: candidate | 1: rest | 2: growing part
-    for v in vertices:
-        partition[v] = 1
+    partition = graph.vp["partition"]
+    partition.a = 1 #Inicializar todos los nodos que empiecen con el valor 1 (rest)
     queue = Frontier()
     queue.add_or_update(start,update_gain(graph,start,partition))
     cnt = 0 # vertex that are in the growing part
@@ -142,10 +146,12 @@ while len(list(g.edges())) < 50:  # Add up to a total of 50 edges
         edge = g.add_edge(u, v)
         edge_weights[edge] = round(random.uniform(1.0, 10.0), 1)
 
+
+part = g.new_vertex_property("int") 
+g.vp["partition"] = part
 # Assign vertex labels and edge weights
 g.vp["name"] = vertex_labels
 g.ep["weight"] = edge_weights
-
 g1,g2 = bipartition(g)
 print(g1.num_vertices(), g2.num_vertices())
 # Draw the graph
