@@ -8,6 +8,8 @@ import heapq
 def compress(graph):
     matched = dict()
     newGraph = Graph(graph,directed=False)
+    coarse_map = graph.new_vertex_property("object")
+    weights = graph.ep["weight"]
     for v in graph.vertices():
         if v in matched:
             continue
@@ -16,7 +18,7 @@ def compress(graph):
         for e in v.all_edges():
             neigh = e.target() if e.source() == v else e.source()
             if neigh not in matched:
-                weight = graph.ep["weight"][e]
+                weight = weights[e]
                 if weight > max_weight:
                     max_edge = (v,neigh)
                     max_weight = weight
@@ -26,6 +28,8 @@ def compress(graph):
             matched[u] = True
             #Merge node u and v
             x = newGraph.add_vertex()
+            coarse_map[u] = x
+            coarse_map[v] = v
             for vertice in [u,v]:
                 for edge in vertice.all_edges():
                     weight = newGraph.ep["weight"][edge]
@@ -40,44 +44,5 @@ def compress(graph):
                     
             newGraph.remove_vertex(newGraph.vertex(u), fast=True)
             newGraph.remove_vertex(newGraph.vertex(v), fast=True)
+    graph.vp["collapse"] = coarse_map
     return newGraph
-
-# Testing
-g = Graph(directed=False)
-
-v1 = g.add_vertex()
-v2 = g.add_vertex()
-v3 = g.add_vertex()
-v4 = g.add_vertex()
-
-e1 = g.add_edge(v1, v2)
-e2 = g.add_edge(v2, v3)
-e3 = g.add_edge(v3, v4)
-e4 = g.add_edge(v4, v1)
-e5 = g.add_edge(v1, v3)
-
-vertex_labels = g.new_vertex_property("string")
-vertex_labels[v1] = "A"
-vertex_labels[v2] = "B"
-vertex_labels[v3] = "C"
-vertex_labels[v4] = "D"
-g.vp["name"] = vertex_labels
-
-edge_weights = g.new_edge_property("double")
-edge_weights[e1] = 1.9
-edge_weights[e2] = 2.0
-edge_weights[e3] = 2.5
-edge_weights[e4] = 1.0
-edge_weights[e5] = 3.0
-g.ep["weight"] = edge_weights
-
-
-"""graph_draw(g,
-           vertex_text=g.vp["name"],  # Mostrar etiquetas de vértices
-           edge_text=g.ep["weight"],  # Mostrar pesos de aristas
-           output_size=(500, 500))"""
-tmpGraph = compress(g)
-graph_draw(tmpGraph,
-           vertex_text=tmpGraph.vp["name"],  # Mostrar etiquetas de vértices
-           edge_text=tmpGraph.ep["weight"],  # Mostrar pesos de aristas
-           output_size=(500, 500))
