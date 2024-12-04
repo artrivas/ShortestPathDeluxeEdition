@@ -42,11 +42,7 @@ def update_gain(graph,v, partition):
             external += weight
     return external - internal
 
-def bfs(graph, start,mode):
-    vertices = graph.get_vertices()
-    if mode: #partition the graph by the start node
-        graph1 = Graph(graph,directed=False)
-        graph2 = Graph(graph,directed=False)
+def bfs(graph, start):
     partition = graph.vp["partition"]
     partition.a = 1 #Inicializar todos los nodos que empiecen con el valor 1 (rest)
     queue = Frontier()
@@ -66,16 +62,6 @@ def bfs(graph, start,mode):
             if partition[neigh] == 1:
                 partition[neigh] = 0
                 queue.add_or_update(neigh,update_gain(graph,neigh,partition))
-            
-            
-    if mode:
-        print(vertices)
-        for v in sorted(vertices, reverse=True):
-            if partition[v] == 2: 
-                graph2.remove_vertex(graph2.vertex(v))
-            else:  
-                graph1.remove_vertex(graph1.vertex(v))
-        return [graph1, graph2]
     #calculates edge-cut of the graph
     return edgeCut
 
@@ -86,11 +72,11 @@ def bipartition(graph): #It uses greedy graph growing algorithm
     for i in range(k):
         random_index = random.randint(0,graph.num_vertices()-1)
         start = graph.vertex(random_index)
-        cost = bfs(graph,start,False)
+        cost = bfs(graph,start)
         if cost < minEdgeCut:
             cost = minEdgeCut
             rStart = start
-    bfs(graph,rStart,False) #Just update the graph partition
+    bfs(graph,rStart) #Just update the graph partition
     partition = graph.vp["partition"]
     for v in graph.get_vertices():
         if partition[v] == 1:
