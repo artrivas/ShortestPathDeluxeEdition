@@ -73,8 +73,10 @@ def preprocess(graph,partition):
 
 def decompress(listGraphs):
     itr = len(listGraphs)-1
-    preprocess(listGraphs[itr])
-    boundary_vertices = find_boundary_vertices(listGraphs[itr],listGraphs[itr].vp["partition"])
+    p1 = listGraphs[itr].vp["partition"]
+    preprocess(listGraphs[itr],p1)
+    boundary_vertices = find_boundary_vertices(listGraphs[itr],p1)
+    gsize = listGraphs[itr].num_vertices()
     while itr: #Expect to represent itr>=1
         pAfter = listGraphs[itr].vp["partition"] #graph after comprression
         pBefore = listGraphs[itr-1].vp["partition"] #graph before compression
@@ -98,9 +100,13 @@ def decompress(listGraphs):
                 else:
                     newExte[v] +=1
         #Up to see BKL-refinement
-        BKL(listGraphs[itr-1],pBefore,boundary_vertices,newInte,newExte)
+        if listGraphs[itr-1].num_vertices() <= gsize*2/100:
+            BKL(listGraphs[itr-1],pBefore,boundary_vertices,newInte,newExte)
+        else:
+            BKL(listGraphs[itr-1],pBefore,boundary_vertices,newInte,newExte,1)
         listGraphs[itr-1].vp["internal"] = newInte
         listGraphs[itr-1].vp["external"] = newExte
         itr-=1
     return listGraphs[0]
+
     
