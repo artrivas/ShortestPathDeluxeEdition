@@ -8,9 +8,11 @@ import heapq
 def compress(graph):
     matched = dict()
     newGraph = Graph(graph,directed=False)
-    coarse_map = graph.new_vertex_property("object")
-    weights = graph.ep["weight"]
-    for v in graph.vertices():
+    child1 = newGraph.new_vertex_property("object")
+    child2 = newGraph.new_vertex_property("object")
+    weights = newGraph.ep["weight"]
+    toBeDeleted = []
+    for v in newGraph.vertices():
         if v in matched:
             continue
         max_edge = None
@@ -24,16 +26,24 @@ def compress(graph):
                     max_weight = weight
         if max_edge != None:
             u,v = max_edge
-            matched[v] = True
-            matched[u] = True
             #Merge node u and v
             x = newGraph.add_vertex()
-            coarse_map[u] = x
-            coarse_map[v] = v
+            toBeDeleted.append(u)
+            toBeDeleted.append(v)
+            matched[v] = x #for deletion purposes
+            matched[u] = x #for deletion purposes
+            matched[x] = x
+            
+            child1[x] = u
+            child2[x] = v
             for vertice in [u,v]:
                 for edge in vertice.all_edges():
                     weight = newGraph.ep["weight"][edge]
                     other = edge.target() if edge.source() == vertice else edge.source()
+                    if other in matched:
+                        other = matched[other]
+                    if other == x:
+                        continue
                     # Check if edge already exists
                     existing_edge = newGraph.edge(other, x)
                     if existing_edge:
@@ -41,8 +51,10 @@ def compress(graph):
                     else:
                         new_edge = newGraph.add_edge(other, x)
                         newGraph.ep["weight"][new_edge] = weight
-                    
-            newGraph.remove_vertex(newGraph.vertex(u), fast=True)
-            newGraph.remove_vertex(newGraph.vertex(v), fast=True)
-    graph.vp["collapse"] = coarse_map
+    for v in reversed(sorted(toBeDeleted)):
+        newGraph.remove_vertex(v)
+    
+    newGraph.vp["child1"] = child1
+    newGraph.vp["child2"] = child2
     return newGraph
+

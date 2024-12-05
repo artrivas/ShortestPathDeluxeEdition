@@ -43,8 +43,9 @@ def update_gain(graph,v, partition):
     return external - internal
 
 def bfs(graph, start):
-    partition = graph.vp["partition"]
+    partition = graph.new_vertex_property("int")
     partition.a = 1 #Inicializar todos los nodos que empiecen con el valor 1 (rest)
+    graph.vp["partition"] = partition
     queue = Frontier()
     queue.add_or_update(start,update_gain(graph,start,partition))
     cnt = 0 # vertex that are in the growing part

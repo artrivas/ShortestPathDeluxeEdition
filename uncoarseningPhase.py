@@ -57,19 +57,17 @@ def BKL(graph, partition, boundary_vertices,inte,exte, max_iterations=10):
     return partition
 
 def preprocess(graph,partition):
-    external = 0
-    internal = 0
     inte = graph.new_vertex_property("int")
-    ext = graph.new_vertex_property("int")
+    exte = graph.new_vertex_property("int")
     for v in graph.vertices():
         for edge in v.all_edges():
             u = edge.target() if edge.source() == v else edge.source()
             if partition[u] == partition[v]:
-                internal += 1
+                inte[v] += 1
             else:
-                external += 1
+                exte[v] += 1
     graph.vp["internal"] = inte
-    graph.vp["external"] = ext    
+    graph.vp["external"] = exte    
 
 def decompress(listGraphs):
     itr = len(listGraphs)-1
@@ -79,22 +77,20 @@ def decompress(listGraphs):
     gsize = listGraphs[itr].num_vertices()
     while itr: #Expect to represent itr>=1
         pAfter = listGraphs[itr].vp["partition"] #graph after comprression
-        pBefore = listGraphs[itr-1].vp["partition"] #graph before compression
-        whichCollapse = listGraphs[itr-1].vp["collapse"] #Which vertices it collapse to
+        pBefore = listGraphs[itr-1].new_vertex_property("int") #graph before compression
+        child1 = listGraphs[itr].vp["child1"]
+        child2 = listGraphs[itr].vp["child2"]
         #Project the vertices of G_{i+1} to G_i
-        exte = listGraphs[itr].vp["external"]
-        inte = listGraphs[itr].vp["internal"]
         newExte = listGraphs[itr-1].new_vertex_property("int")
         newInte = listGraphs[itr-1].new_vertex_property("int")
-        for v in listGraphs[itr-1]:
-            pBefore[v] = pAfter[whichCollapse[v]]
-        for v in listGraphs[itr-1]:
-            edParent = exte[whichCollapse[v]]
-            inParent = inte[whichCollapse[v]]
-            if edParent == 0 and inParent == 0:
-                print("Should not happen\n")
-    
-            for u in v.get_all_neighbors():
+        for v in listGraphs[itr].vertices():
+            if child1[v]:
+                pBefore[child1[v]] = pAfter[v]
+            if child2[v]:
+                pBefore[child2[v]] = pAfter[v]
+        
+        for v in listGraphs[itr-1].vertices():
+            for u in v.all_neighbors():
                 if pBefore[u] == pBefore[v]:
                     newInte[v] +=1
                 else:
@@ -106,7 +102,7 @@ def decompress(listGraphs):
             BKL(listGraphs[itr-1],pBefore,boundary_vertices,newInte,newExte,1)
         listGraphs[itr-1].vp["internal"] = newInte
         listGraphs[itr-1].vp["external"] = newExte
+        listGraphs[itr-1].vp["partition"] = pBefore#graph before compression
         itr-=1
-    return listGraphs[0]
 
     
